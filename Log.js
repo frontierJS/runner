@@ -2,14 +2,15 @@
 export default Log
 
 function Log (self) {
+  const { Proc } = self
   return {
     logs: [],
     latest: undefined,
     add (msg) {
       const note = `${JSON.stringify(msg)} : ${new Date().toJSON()}`
-      self.Log.latest = note
-      self.Log.logs.push(note)
-      if (self.Proc.logging) console.log(msg)
+      this.latest = note
+      this.logs.push(note)
+      if (Proc.logging) console.log(msg)
     }
   }
 }

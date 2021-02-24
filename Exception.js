@@ -1,6 +1,5 @@
-function isF (x) {
-  return typeof x === 'function'
-}
+import Util from './Util.js'
+const { isF } = Util
 
 export default Exception
 
