@@ -3,8 +3,9 @@ import commonjs from '@rollup/plugin-commonjs';
 export default {
   input: './index.js',
   output: {
-    dir: 'output',
-    format: 'cjs'
+    name: "Runner",
+    file: 'dist/runner.js',
+    format: 'esm'
   },
-  plugins: [commonjs()]
+  plugins: []
 };

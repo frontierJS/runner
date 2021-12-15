@@ -5,6 +5,7 @@ export default Proc
 
 function Proc (self) {
   return {
+    storageKey: 'frontier:runner',
     lastResponse: 'prev',
     logging: false,
     prefix: '_',
@@ -51,10 +52,24 @@ function Proc (self) {
     loadCommands (commands) {
       Object.entries(commands).forEach(([cmd, func]) => self.Proc.set(cmd, func))
     },
+    getStorage() {
+      const values = localStorage.getItem(this.storageKey)
+      if (values) {
+        Object.entries(JSON.parse(values)).forEach(([key, value]) => {
+          self[key] = value
+        })
+      }
+
+      console.log(`Loaded from storage. Key [${this.storageKey}]`)
+    },
+    clearStorage() {
+      const values = localStorage.removeItem('frontier:runner')
+      console.log(`Cleared storage. Key [${this.storageKey}]`)
+    },
     preload (preload) {
       self.Log.add(preload.events)
       self.Queue.load(preload.events || [])
-      self.Log.add('RUNNNING presets')
+      self.Log.add('RUNNING presets')
       self.Command.run(preload.cmds)
     }
   }

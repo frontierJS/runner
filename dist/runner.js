@@ -1,8 +1,3 @@
-'use strict';
-
-var validator_js = require('indicative/validator.js');
-require('indicative/sanitizer.js');
-
 /* eslint no-extend-native: ["error", { "exceptions": ["Array", "Object"] }] */
 Object.filter = function (obj, predicate) {
   return Object.fromEntries(Object.entries(obj).filter(predicate))
@@ -40,7 +35,36 @@ Util.til = function (p) {
   )
 };
 
-const { til: til$1 } = Util;
+Util.anyToString = function (valueToConvert) {
+    if (valueToConvert === undefined || valueToConvert === null) {
+        return valueToConvert === undefined ? "undefined" : "null";
+    }
+    if (typeof valueToConvert === "string") {
+        return `'${valueToConvert}'`;
+    }
+    if (typeof valueToConvert === "number" ||
+        typeof valueToConvert === "boolean" ||
+        typeof valueToConvert === "function") {
+        return valueToConvert.toString();
+    }
+    if (valueToConvert instanceof Array) {
+        const stringfiedArray = valueToConvert
+            .map(property => anyToString(property))
+            .join(",");
+        return `[${stringfiedArray}]`;
+    }
+    if (typeof valueToConvert === "object") {
+        const stringfiedObject = Object.entries(valueToConvert)
+            .map((entry) => {
+            return `${entry[0]}: ${anyToString(entry[1])}`;
+        })
+            .join(",");
+        return `{${stringfiedObject}}`;
+    }
+    return JSON.stringify(valueToConvert);
+};
+
+// import { validate } from 'indicative/validator.js'
 
 function Prop (spec) {
   const { Proc, Queue, Command, Log } = spec;
@@ -53,41 +77,41 @@ function Prop (spec) {
      * validates the rules
      * @param {array} rules optional
      */
-    async _validate (rules) {
-      if (rules === spec) {
-        const [key] = Queue.events[0];
-        if (key !== 'rules') {
-          return 'failure: no other registers exist'
-        }
-        const [, expression] = Queue.events.shift();
-        rules = Queue.resolve(expression);
-        // return await self.Command.validate(self.Queue.events)
-      }
-      const data = Object.keys(rules).reduce((acc, key) => {
-        acc[key] = Queue.events.find(([name, exp]) => name === key)[1];
-        return acc
-      }, {});
-      if (rules === spec) {
-        return await til$1(validator_js.validate(data, rules))
-      }
-      return await validator_js.validate(data, rules)
-    },
-    async _sanitize (rules) {
-      if (!rules) {
-        const [key] = Queue.events[0];
-        if (key === 'rules') {
-          await Command.sanitize(Queue.events);
-        } else {
-          return 'failure: no other registers exist'
-        }
-      } else {
-        const data = Object.keys(rules).reduce((acc, key) => {
-          acc[key] = Queue.events.find(([name, exp]) => name === key)[1];
-          return acc
-        }, {});
-        return await validator_js.validate(data, rules)
-      }
-    },
+    // async _validate (rules) {
+    //   if (rules === spec) {
+    //     const [key] = Queue.events[0]
+    //     if (key !== 'rules') {
+    //       return 'failure: no other registers exist'
+    //     }
+    //     const [, expression] = Queue.events.shift()
+    //     rules = Queue.resolve(expression)
+    //     // return await self.Command.validate(self.Queue.events)
+    //   }
+    //   const data = Object.keys(rules).reduce((acc, key) => {
+    //     acc[key] = Queue.events.find(([name, exp]) => name === key)[1]
+    //     return acc
+    //   }, {})
+    //   if (rules === spec) {
+    //     return await til(validate(data, rules))
+    //   }
+    //   return await validate(data, rules)
+    // },
+    // async _sanitize (rules) {
+    //   if (!rules) {
+    //     const [key] = Queue.events[0]
+    //     if (key === 'rules') {
+    //       await Command.sanitize(Queue.events)
+    //     } else {
+    //       return 'failure: no other registers exist'
+    //     }
+    //   } else {
+    //     const data = Object.keys(rules).reduce((acc, key) => {
+    //       acc[key] = Queue.events.find(([name, exp]) => name === key)[1]
+    //       return acc
+    //     }, {})
+    //     return await validate(data, rules)
+    //   }
+    // },
     _assign () {
       Log.add('assigning');
       Queue.events.map(Command.assign);
@@ -131,6 +155,7 @@ function Prop (spec) {
   }
 }
 
+// import { validate as valid } from 'indicative/validator.js'
 const { isP: isP$1, isF: isF$2, isAF, til } = Util;
 /**
  * Command
@@ -139,14 +164,14 @@ function Command (self) {
   const { Proc, Queue, Log, Exception } = self;
   return {
     default: 'runAsync',
-    async validate (events) {
-      const data = Object.keys(rules).reduce((acc, key) => {
-        acc[key] = Queue.events.find(([name, exp]) => name === key)[1];
-        return acc
-      }, {});
+    // async validate (events) {
+    //   const data = Object.keys(rules).reduce((acc, key) => {
+    //     acc[key] = Queue.events.find(([name, exp]) => name === key)[1]
+    //     return acc
+    //   }, {})
 
-      return await validator_js.validate(data, rules)
-    },
+    //   return await valid(data, rules)
+    // },
     async run (commands) {
       for await (const cmd of commands) {
         Log.add({ cmd });
@@ -288,7 +313,7 @@ function Queue (self) {
             // Do we kill the loop?
             // break loop
             // return
-            console.log('klling loop on exception');
+            console.log('killing loop on exception');
             return false
           }
           result = result.err;
@@ -319,6 +344,7 @@ const { isP } = Util;
 
 function Proc (self) {
   return {
+    storageKey: 'frontier:runner',
     lastResponse: 'prev',
     logging: false,
     prefix: '_',
@@ -365,10 +391,24 @@ function Proc (self) {
     loadCommands (commands) {
       Object.entries(commands).forEach(([cmd, func]) => self.Proc.set(cmd, func));
     },
+    getStorage() {
+      const values = localStorage.getItem(this.storageKey);
+      if (values) {
+        Object.entries(JSON.parse(values)).forEach(([key, value]) => {
+          self[key] = value;
+        });
+      }
+
+      console.log(`Loaded from storage. Key [${this.storageKey}]`);
+    },
+    clearStorage() {
+      localStorage.removeItem('frontier:runner');
+      console.log(`Cleared storage. Key [${this.storageKey}]`);
+    },
     preload (preload) {
       self.Log.add(preload.events);
       self.Queue.load(preload.events || []);
-      self.Log.add('RUNNNING presets');
+      self.Log.add('RUNNING presets');
       self.Command.run(preload.cmds);
     }
   }
@@ -508,14 +548,18 @@ function Log (self) {
   }
 }
 
-const { keyRegex } = Util;
+const { keyRegex, anyToString: anyToString$1 } = Util;
 
 function Runner (spec = {}) {
   const self = async function runner (strings, ...expressions) {
     const { events, commands } = parser.parse(strings, expressions);
     self.Queue.load(events);
     await self.Command.run(commands);
-
+    localStorage.setItem('frontier:runner', JSON.stringify(self._values));
+    // save _internals, _values, _commands
+    // console.log(self._internal)
+    // console.log(self._values)
+    // console.log(self._commands)
     return self
   };
 
@@ -669,4 +713,4 @@ const main = async (context) => {
 main()
 */
 
-module.exports = Runner;
+export { Runner as default };

@@ -1,5 +1,5 @@
-import { validate } from 'indicative/validator.js'
-import { sanitize } from 'indicative/sanitizer.js'
+// import { validate as valid } from 'indicative/validator.js'
+// import { sanitize } from 'indicative/sanitizer.js'
 import Util from './Util.js'
 const { isP, isF, isAF, til } = Util
 
@@ -11,14 +11,14 @@ function Command (self) {
   const { Proc, Queue, Log, Exception } = self
   return {
     default: 'runAsync',
-    async validate (events) {
-      const data = Object.keys(rules).reduce((acc, key) => {
-        acc[key] = Queue.events.find(([name, exp]) => name === key)[1]
-        return acc
-      }, {})
+    // async validate (events) {
+    //   const data = Object.keys(rules).reduce((acc, key) => {
+    //     acc[key] = Queue.events.find(([name, exp]) => name === key)[1]
+    //     return acc
+    //   }, {})
 
-      return await validate(data, rules)
-    },
+    //   return await valid(data, rules)
+    // },
     async run (commands) {
       for await (const cmd of commands) {
         Log.add({ cmd })

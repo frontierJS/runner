@@ -7,7 +7,7 @@ import Exception from './Exception.js'
 import Log from './Log.js'
 import Util from './Util.js'
 
-const { keyRegex } = Util
+const { keyRegex, anyToString } = Util
 
 export default Runner
 
@@ -16,7 +16,11 @@ function Runner (spec = {}) {
     const { events, commands } = parser.parse(strings, expressions)
     self.Queue.load(events)
     await self.Command.run(commands)
-
+    localStorage.setItem('frontier:runner', JSON.stringify(self._values))
+    // save _internals, _values, _commands
+    // console.log(self._internal)
+    // console.log(self._values)
+    // console.log(self._commands)
     return self
   }
 

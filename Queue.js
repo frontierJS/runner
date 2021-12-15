@@ -41,7 +41,7 @@ function Queue (self) {
             // Do we kill the loop?
             // break loop
             // return
-            console.log('klling loop on exception')
+            console.log('killing loop on exception')
             return false
           }
           result = result.err
